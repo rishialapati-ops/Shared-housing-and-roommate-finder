@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>S.H.A.R.F</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; color: #333; }
+
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: flex; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 40px; background: #fff; border-bottom: 1px solid #eee;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-logo { font-size: 22px; font-weight: 800; }
+    .topbar-logo span { color: #a8c400; }
+    .topbar-nav { display: flex; gap: 10px; align-items: center; }
+    .nav-link {
+      padding: 8px 16px; border-radius: 20px; font-size: 13px;
+      cursor: pointer; border: 1px solid #eee; background: #fff; color: #555;
+      font-weight: 600; transition: all 0.2s;
+    }
+    .nav-link:hover { background: #f0f0f0; }
+    .nav-link.active-nav { background: #c8e600; border-color: #c8e600; color: #222; }
+    .profile-btn {
+      position: relative; cursor: pointer; width: 38px; height: 38px;
+      border-radius: 50%; background: #c8e600; display: flex; align-items: center;
+      justify-content: center; font-size: 16px; font-weight: 700; margin-left: 6px;
+    }
+    .profile-dropdown {
+      display: none; position: absolute; right: 0; top: 46px;
+      background: #fff; border: 1px solid #eee; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12); min-width: 180px; z-index: 999;
+      overflow: hidden;
+    }
+    .profile-dropdown.open { display: block; }
+    .profile-dropdown-header { padding: 14px 16px; background: #f9f9f9; border-bottom: 1px solid #eee; }
+    .profile-dropdown-header p { font-size: 13px; font-weight: 700; color: #222; }
+    .profile-dropdown-header span { font-size: 11px; color: #888; }
+    .dropdown-item {
+      padding: 11px 16px; font-size: 13px; cursor: pointer; color: #333;
+      display: flex; align-items: center; gap: 8px; transition: background 0.15s;
+    }
+    .dropdown-item:hover { background: #f9f9f9; }
+    .dropdown-item.red { color: #e53935; }
+
+    /* ── AUTH ── */
+    #authScreen { justify-content: center; align-items: center; background: linear-gradient(135deg, #e8f5c8, #fff); }
+    .auth-box {
+      background: #fff; border-radius: 20px; padding: 44px;
+      width: 420px; box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+    }
+    .auth-logo { font-size: 30px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+    .auth-logo span { color: #a8c400; }
+    .auth-subtitle { text-align: center; color: #888; font-size: 12px; margin-bottom: 28px; letter-spacing: 1px; }
+    .auth-tabs { display: flex; margin-bottom: 24px; border-radius: 10px; overflow: hidden; border: 1px solid #ddd; }
+    .auth-tab { flex: 1; padding: 11px; text-align: center; cursor: pointer; font-size: 14px; font-weight: 600; background: #f9f9f9; color: #888; }
+    .auth-tab.active { background: #c8e600; color: #222; }
+    .auth-box input {
+      width: 100%; padding: 12px 14px; border: 1px solid #ddd;
+      border-radius: 10px; font-size: 14px; margin-bottom: 12px; outline: none; transition: border 0.2s;
+    }
+    .auth-box input:focus { border-color: #a8c400; }
+    .auth-btn {
+      width: 100%; padding: 13px; background: #c8e600; border: none;
+      border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px;
+    }
+    .auth-btn:hover { background: #b5d000; }
+    .auth-error { color: #e53935; font-size: 13px; margin-bottom: 10px; text-align: center; display: none; padding: 8px; background: #ffeaea; border-radius: 8px; }
+    .auth-success { color: #2e7d32; font-size: 13px; margin-bottom: 10px; text-align: center; display: none; padding: 8px; background: #e8f5e9; border-radius: 8px; }
+
+    /* ── HOME ── */
+    #homeScreen { flex-direction: column; }
+    .home-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 28px; padding: 60px 20px; }
+    .trending-banner {
+      background: linear-gradient(90deg, #222, #444); color: #c8e600;
+      padding: 12px 28px; border-radius: 30px; font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .home-title { font-size: 30px; font-weight: 800; text-align: center; }
+    .home-title span { color: #a8c400; }
+    .home-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .home-card {
+      width: 200px; background: #fff; border-radius: 18px; padding: 32px 20px;
+      text-align: center; cursor: pointer; border: 2px solid #eee;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: all 0.2s;
+    }
+    .home-card:hover { border-color: #c8e600; transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .home-card-icon { font-size: 44px; margin-bottom: 14px; }
+    .home-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .home-card p { font-size: 12px; color: #888; }
+
+    /* ── ADD LISTING ── */
+    #addScreen { flex-direction: column; }
+    .add-content { flex: 1; display: flex; justify-content: center; align-items: center; padding: 40px 20px; }
+    .add-box {
+      background: #fff; border-radius: 18px; padding: 40px;
+      width: 100%; max-width: 580px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .add-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 22px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .add-box input, .add-box select {
+      width: 100%; padding: 11px 14px; border: 1px solid #ddd;
+      border-radius: 10px; font-size: 14px; outline: none; transition: border 0.2s;
+    }
+    .add-box input:focus, .add-box select:focus { border-color: #a8c400; }
+    .photo-upload-area {
+      border: 2px dashed #ddd; border-radius: 12px; padding: 20px;
+      text-align: center; cursor: pointer; transition: border-color 0.2s;
+      position: relative; margin-bottom: 14px;
+    }
+    .photo-upload-area:hover { border-color: #a8c400; }
+    .photo-upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .photo-upload-area .upload-icon { font-size: 30px; }
+    .photo-upload-area p { font-size: 13px; color: #888; margin-top: 6px; }
+    #previewImg { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; margin-top: 10px; display: none; border: 2px solid #c8e600; }
+    .submit-btn { width: 100%; padding: 13px; background: #c8e600; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .submit-btn:hover { background: #b5d000; }
+    .back-btn { background: none; border: none; font-size: 14px; color: #888; cursor: pointer; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+    .back-btn:hover { color: #333; }
+    .pending-notice { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #795548; margin-bottom: 16px; }
+
+    /* ── LISTINGS ── */
+    #listScreen { flex-direction: column; }
+    .list-content { padding: 28px 40px; }
+    .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .list-header h2 { font-size: 22px; font-weight: 700; }
+    .filter-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .filter-select-sm { padding: 8px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 13px; background: #fff; outline: none; cursor: pointer; }
+    .listings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .empty-state { grid-column: 1/-1; text-align: center; padding: 60px; color: #aaa; font-size: 16px; }
+    .empty-state span { font-size: 50px; display: block; margin-bottom: 14px; }
+    .card { background: #fff; border-radius: 14px; border: 1px solid #eee; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
+    .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .card.premium { border: 2px solid #c8e600; }
+    .card-top { display: flex; }
+    .card-img { width: 130px; height: 150px; object-fit: cover; flex-shrink: 0; }
+    .card-img-placeholder { width: 130px; height: 150px; background: #f0e8d8; display: flex; align-items: center; justify-content: center; font-size: 50px; flex-shrink: 0; }
+    .card-info { padding: 16px; flex: 1; }
+    .card-name { font-size: 17px; font-weight: 700; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+    .badge-premium { background: #c8e600; color: #222; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+    .badge-pending { background: #fff3cd; color: #856404; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+    .card-location { font-size: 12px; color: #888; margin-bottom: 12px; }
+    .card-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+    .stat-label { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .stat-value { font-size: 13px; font-weight: 600; }
+    .card-bottom { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-top: 1px solid #f0f0f0; flex-wrap: wrap; gap: 6px; }
+    .distance { font-size: 12px; color: #888; }
+    .distance strong { color: #222; }
+    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .icon-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .icon-btn:hover { background: #f0f0f0; }
+    .admin-action-btn { padding: 5px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-approve { background: #e8f5e9; color: #2e7d32; }
+    .btn-approve:hover { background: #c8e6c9; }
+    .btn-reject { background: #ffeaea; color: #e53935; }
+    .btn-reject:hover { background: #ffcdd2; }
+    .btn-delete { background: #ffeaea; color: #e53935; }
+    .btn-delete:hover { background: #ffcdd2; }
+    .btn-premium { background: #f9f9e0; color: #827717; }
+    .btn-premium:hover { background: #f0f0a0; }
+    .posted-by { font-size: 11px; color: #aaa; margin-top: 6px; }
+
+    /* ── ADMIN DASHBOARD ── */
+    #adminScreen { flex-direction: column; }
+    .admin-content { padding: 30px 40px; }
+    .admin-content h2 { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 22px; text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #eee;
+    }
+    .stat-card .stat-num { font-size: 32px; font-weight: 800; color: #a8c400; }
+    .stat-card .stat-lbl { font-size: 13px; color: #888; margin-top: 4px; }
+    .stat-card .stat-ico { font-size: 28px; margin-bottom: 8px; }
+    .admin-section { background: #fff; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #eee; }
+    .admin-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; background: #f9f9f9; }
+    .user-row.banned { background: #ffeaea; }
+    .user-info { display: flex; align-items: center; gap: 10px; }
+    .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: #c8e600; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+    .user-name { font-size: 14px; font-weight: 600; }
+    .user-meta { font-size: 11px; color: #888; }
+    .user-actions { display: flex; gap: 8px; }
+    .btn-ban { padding: 5px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; background: #ffeaea; color: #e53935; }
+    .btn-ban:hover { background: #ffcdd2; }
+    .btn-unban { padding: 5px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; background: #e8f5e9; color: #2e7d32; }
+    .btn-delete-user { padding: 5px 12px; border-radius: 16px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; background: #eee; color: #555; }
+    .areas-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .area-tag { background: #f0f0f0; padding: 6px 14px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .area-tag button { background: none; border: none; color: #e53935; cursor: pointer; font-size: 14px; font-weight: 700; }
+    .area-input-row { display: flex; gap: 10px; }
+    .area-input-row input { padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 13px; outline: none; flex: 1; }
+    .area-add-btn { padding: 9px 18px; background: #c8e600; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .export-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .export-btn { padding: 10px 22px; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .export-btn.green { background: #e8f5e9; color: #2e7d32; }
+    .export-btn.blue { background: #e3f2fd; color: #1565c0; }
+    .trending-input-row { display: flex; gap: 10px; }
+    .trending-input-row input { padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 13px; outline: none; flex: 1; }
+    .pending-list { display: flex; flex-direction: column; gap: 10px; }
+    .pending-card { background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .pending-info { font-size: 13px; }
+    .pending-info strong { font-size: 15px; }
+    .pending-actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ SCREEN 1: AUTH ══ -->
+<div class="screen active" id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">S.H.A.R.<span>F</span>®</div>
+    <div class="auth-subtitle">SHARED HOUSING AND ROOMMATE FINDER</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Login</div>
+      <div class="auth-tab" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+    <div id="loginForm">
+      <div class="auth-error" id="loginError">Invalid username or password.</div>
+      <input type="text" id="loginUser" placeholder="Username" />
+      <input type="password" id="loginPass" placeholder="Password" />
+      <button class="auth-btn" onclick="doLogin()">Login</button>
+    </div>
+    <div id="signupForm" style="display:none;">
+      <div class="auth-error" id="signupError"></div>
+      <div class="auth-success" id="signupSuccess">Account created! You can now login.</div>
+      <input type="text" id="signupUser" placeholder="Choose a Username" />
+      <input type="password" id="signupPass" placeholder="Choose a Password" />
+      <input type="password" id="signupPass2" placeholder="Confirm Password" />
+      <button class="auth-btn" onclick="doSignup()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: HOME ══ -->
+<div class="screen" id="homeScreen">
+  <div style="flex-direction:column;width:100%;">
+    <div class="topbar">
+      <div class="topbar-logo">S.H.A.R.<span>F</span>®</div>
+      <div class="topbar-nav">
+        <div class="nav-link" onclick="goTo('listScreen')">🔍 Find Roommates</div>
+        <div class="nav-link" onclick="goTo('addScreen')">➕ Add Listing</div>
+        <div class="nav-link admin-only" onclick="goTo('adminScreen')" style="display:none;">👑 Admin</div>
+        <div class="profile-btn" onclick="toggleDropdown('dd1')">
+          <span class="p-initial">U</span>
+          <div class="profile-dropdown" id="dd1">
+            <div class="profile-dropdown-header">
+              <p class="p-username">Username</p>
+              <span class="p-role">User</span>
+            </div>
+            <div class="dropdown-item" onclick="goTo('listScreen')">📋 View Listings</div>
+            <div class="dropdown-item" onclick="goTo('addScreen')">➕ Add Listing</div>
+            <div class="dropdown-item admin-only" onclick="goTo('adminScreen')" style="display:none;">👑 Admin Panel</div>
+            <div class="dropdown-item red" onclick="doLogout()">🚪 Logout</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="home-content">
+      <div class="trending-banner" id="trendingBanner">🔥 Most searched area: Gachibowli</div>
+      <div class="home-title">Welcome to <span>S.H.A.R.F</span> 👋</div>
+      <div class="home-cards">
+        <div class="home-card" onclick="goTo('listScreen')">
+          <div class="home-card-icon">🔍</div>
+          <h3>Find Roommates</h3>
+          <p>Browse approved listings in Hyderabad</p>
+        </div>
+        <div class="home-card" onclick="goTo('addScreen')">
+          <div class="home-card-icon">➕</div>
+          <h3>Add Listing</h3>
+          <p>Post your room or find a roommate</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3: ADD LISTING ══ -->
+<div class="screen" id="addScreen">
+  <div style="flex-direction:column;width:100%;">
+    <div class="topbar">
+      <div class="topbar-logo">S.H.A.R.<span>F</span>®</div>
+      <div class="topbar-nav">
+        <div class="nav-link" onclick="goTo('homeScreen')">🏠 Home</div>
+        <div class="nav-link" onclick="goTo('listScreen')">🔍 Find Roommates</div>
+        <div class="nav-link admin-only" onclick="goTo('adminScreen')" style="display:none;">👑 Admin</div>
+        <div class="profile-btn" onclick="toggleDropdown('dd2')">
+          <span class="p-initial">U</span>
+          <div class="profile-dropdown" id="dd2">
+            <div class="profile-dropdown-header">
+              <p class="p-username">Username</p>
+              <span class="p-role">User</span>
+            </div>
+            <div class="dropdown-item red" onclick="doLogout()">🚪 Logout</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="add-content">
+      <div class="add-box">
+        <button class="back-btn" onclick="goTo('homeScreen')">← Back to Home</button>
+        <h2>➕ Add New Listing</h2>
+        <div class="pending-notice">⏳ Your listing will be reviewed by admin before it appears publicly.</div>
+        <div class="form-row">
+          <input type="text" id="aName" placeholder="Your Name" />
+          <select id="aLocation"><option value="">Select Area</option></select>
+        </div>
+        <div class="form-row">
+          <input type="number" id="aRent" placeholder="Rent (₹)" />
+          <select id="aGender">
+            <option value="Any">Looking For: Any</option>
+            <option value="Male">Looking For: Male</option>
+            <option value="Female">Looking For: Female</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <input type="number" id="aDistance" placeholder="Distance (km)" />
+          <input type="text" id="aEmoji" placeholder="Avatar Emoji e.g. 👨" />
+        </div>
+        <div class="photo-upload-area">
+          <input type="file" id="aPhoto" accept="image/*" onchange="previewPhoto(event)" />
+          <div class="upload-icon">📷</div>
+          <p id="uploadText">Click to upload photo from your device</p>
+          <img id="previewImg" src="" alt="Preview" />
+        </div>
+        <button class="submit-btn" onclick="addListing()">Post Listing</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4: LISTINGS ══ -->
+<div class="screen" id="listScreen">
+  <div style="flex-direction:column;width:100%;">
+    <div class="topbar">
+      <div class="topbar-logo">S.H.A.R.<span>F</span>®</div>
+      <div class="topbar-nav">
+        <div class="nav-link" onclick="goTo('homeScreen')">🏠 Home</div>
+        <div class="nav-link" onclick="goTo('addScreen')">➕ Add Listing</div>
+        <div class="nav-link admin-only" onclick="goTo('adminScreen')" style="display:none;">👑 Admin</div>
+        <div class="profile-btn" onclick="toggleDropdown('dd3')">
+          <span class="p-initial">U</span>
+          <div class="profile-dropdown" id="dd3">
+            <div class="profile-dropdown-header">
+              <p class="p-username">Username</p>
+              <span class="p-role">User</span>
+            </div>
+            <div class="dropdown-item red" onclick="doLogout()">🚪 Logout</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="list-content">
+      <button class="back-btn" onclick="goTo('homeScreen')">← Back to Home</button>
+      <div class="list-header">
+        <h2>🏠 All Listings</h2>
+        <div class="filter-row">
+          <select class="filter-select-sm" id="filterArea" onchange="renderListings()"><option value="">All Areas</option></select>
+          <select class="filter-select-sm" id="filterGender" onchange="renderListings()">
+            <option value="">Any Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Any">Any</option>
+          </select>
+        </div>
+      </div>
+      <div class="listings-grid" id="listingsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 5: ADMIN DASHBOARD ══ -->
+<div class="screen" id="adminScreen">
+  <div style="flex-direction:column;width:100%;">
+    <div class="topbar">
+      <div class="topbar-logo">S.H.A.R.<span>F</span>® <span style="font-size:13px;color:#888;font-weight:400;">Admin Panel</span></div>
+      <div class="topbar-nav">
+        <div class="nav-link" onclick="goTo('homeScreen')">🏠 Home</div>
+        <div class="nav-link" onclick="goTo('listScreen')">📋 Listings</div>
+        <div class="profile-btn" onclick="toggleDropdown('dd4')">
+          <span class="p-initial">A</span>
+          <div class="profile-dropdown" id="dd4">
+            <div class="profile-dropdown-header">
+              <p class="p-username">admin</p>
+              <span class="p-role">👑 Administrator👑</span>
+            </div>
+            <div class="dropdown-item red" onclick="doLogout()">🚪 Logout</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="admin-content">
+      <h2>👑 Admin Dashboard👑</h2>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-ico">👥</div><div class="stat-num" id="statUsers">0</div><div class="stat-lbl">Total Users</div></div>
+        <div class="stat-card"><div class="stat-ico">🏠</div><div class="stat-num" id="statListings">0</div><div class="stat-lbl">Total Listings</div></div>
+        <div class="stat-card"><div class="stat-ico">⏳</div><div class="stat-num" id="statPending">0</div><div class="stat-lbl">Pending Approval</div></div>
+        <div class="stat-card"><div class="stat-ico">💰</div><div class="stat-num" id="statHighest">₹0</div><div class="stat-lbl">Highest Rent</div></div>
+      </div>
+
+      <!-- PENDING LISTINGS -->
+      <div class="admin-section">
+        <h3>⏳ Pending Listings</h3>
+        <div class="pending-list" id="pendingList"></div>
+      </div>
+
+      <!-- ALL LISTINGS (admin view) -->
+      <div class="admin-section">
+        <h3>📋 All Listings (Admin View)</h3>
+        <div class="listings-grid" id="adminListingsGrid"></div>
+      </div>
+
+      <!-- USERS -->
+      <div class="admin-section">
+        <h3>👥 Manage Users</h3>
+        <div id="usersList"></div>
+      </div>
+
+      <!-- AREAS -->
+      <div class="admin-section">
+        <h3>🏷️ Manage Hyderabad Areas</h3>
+        <div class="areas-row" id="areasRow"></div>
+        <div class="area-input-row">
+          <input type="text" id="newAreaInput" placeholder="Add new area e.g. Miyapur" />
+          <button class="area-add-btn" onclick="addArea()">Add Area</button>
+        </div>
+      </div>
+
+      <!-- TRENDING -->
+      <div class="admin-section">
+        <h3>🔥 Set Trending Area Banner</h3>
+        <div class="trending-input-row">
+          <input type="text" id="trendingInput" placeholder="e.g. Gachibowli" />
+          <button class="area-add-btn" onclick="setTrending()">Update Banner</button>
+        </div>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="admin-section">
+        <h3>🧾 Export Data</h3>
+        <div class="export-btns">
+          <button class="export-btn green" onclick="exportData('users')">⬇️ Export Users (JSON)</button>
+          <button class="export-btn blue" onclick="exportData('listings')">⬇️ Export Listings (JSON)</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── CONSTANTS ───
+  const ADMIN = { username: "admin", password: "admin123", isAdmin: true };
+
+  // ─── STATE ───
+  let users = JSON.parse(localStorage.getItem("sharf_users") || "[]");
+  let listings = JSON.parse(localStorage.getItem("sharf_listings") || "[]");
+  let areas = JSON.parse(localStorage.getItem("sharf_areas") || '["Gachibowli","Banjara Hills","Jubilee Hills","Madhapur","Hitech City","Kondapur","Miyapur","Begumpet","Ameerpet","Kukatpally"]');
+  let trendingArea = localStorage.getItem("sharf_trending") || "Gachibowli";
+  let currentUser = null;
+  let currentPhotoBase64 = null;
+
+  function save() {
+    localStorage.setItem("sharf_users", JSON.stringify(users));
+    localStorage.setItem("sharf_listings", JSON.stringify(listings));
+    localStorage.setItem("sharf_areas", JSON.stringify(areas));
+    localStorage.setItem("sharf_trending", trendingArea);
+  }
+
+  // ─── NAVIGATION ───
+  function goTo(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    closeAllDropdowns();
+    if (id === "listScreen") { populateAreaFilter(); renderListings(); }
+    if (id === "addScreen") populateAreaDropdown();
+    if (id === "adminScreen") renderAdminPanel();
+  }
+
+  // ─── AUTH TABS ───
+  function switchTab(tab) {
+    document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+    if (tab === "login") {
+      document.querySelectorAll(".auth-tab")[0].classList.add("active");
+      document.getElementById("loginForm").style.display = "block";
+      document.getElementById("signupForm").style.display = "none";
+    } else {
+      document.querySelectorAll(".auth-tab")[1].classList.add("active");
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("signupForm").style.display = "block";
+    }
+  }
+
+  // ─── LOGIN ───
+  function doLogin() {
+    const u = document.getElementById("loginUser").value.trim();
+    const p = document.getElementById("loginPass").value;
+    const err = document.getElementById("loginError");
+    if (u === ADMIN.username && p === ADMIN.password) {
+      currentUser = ADMIN; setProfileUI(); goTo("homeScreen"); err.style.display = "none"; return;
+    }
+    const found = users.find(x => x.username === u && x.password === p);
+    if (found) {
+      if (found.banned) { err.textContent = "Your account has been banned."; err.style.display = "block"; return; }
+      currentUser = found; setProfileUI(); goTo("homeScreen"); err.style.display = "none";
+    } else {
+      err.textContent = "Invalid username or password."; err.style.display = "block";
+    }
+  }
+
+  // ─── SIGNUP ───
+  function doSignup() {
+    const u = document.getElementById("signupUser").value.trim();
+    const p = document.getElementById("signupPass").value;
+    const p2 = document.getElementById("signupPass2").value;
+    const err = document.getElementById("signupError");
+    const suc = document.getElementById("signupSuccess");
+    err.style.display = "none"; suc.style.display = "none";
+    if (!u || !p) { err.textContent = "Please fill all fields."; err.style.display = "block"; return; }
+    if (p !== p2) { err.textContent = "Passwords do not match."; err.style.display = "block"; return; }
+    if (u === ADMIN.username || users.find(x => x.username === u)) { err.textContent = "Username already taken."; err.style.display = "block"; return; }
+    users.push({ username: u, password: p, isAdmin: false, banned: false });
+    save();
+    suc.style.display = "block";
+    document.getElementById("signupUser").value = "";
+    document.getElementById("signupPass").value = "";
+    document.getElementById("signupPass2").value = "";
+    setTimeout(() => switchTab("login"), 1500);
+  }
+
+  // ─── LOGOUT ───
+  function doLogout() { currentUser = null; goTo("authScreen"); }
+
+  // ─── PROFILE UI ───
+  function setProfileUI() {
+    const initial = currentUser.username.charAt(0).toUpperCase();
+    const role = currentUser.isAdmin ? "👑 Administrator" : "User";
+    document.querySelectorAll(".p-initial").forEach(el => el.textContent = initial);
+    document.querySelectorAll(".p-username").forEach(el => el.textContent = currentUser.username);
+    document.querySelectorAll(".p-role").forEach(el => el.textContent = role);
+    document.querySelectorAll(".admin-only").forEach(el => {
+      el.style.display = currentUser.isAdmin ? (el.tagName === "DIV" ? "flex" : "block") : "none";
+    });
+    document.getElementById("trendingBanner").textContent = "🔥 Most searched area: " + trendingArea;
+  }
+
+  // ─── DROPDOWNS ───
+  function closeAllDropdowns() { document.querySelectorAll(".profile-dropdown").forEach(d => d.classList.remove("open")); }
+  function toggleDropdown(id) { const d = document.getElementById(id); const wasOpen = d.classList.contains("open"); closeAllDropdowns(); if (!wasOpen) d.classList.add("open"); }
+  document.addEventListener("click", e => { if (!e.target.closest(".profile-btn")) closeAllDropdowns(); });
+
+  // ─── PHOTO ───
+  function previewPhoto(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      currentPhotoBase64 = e.target.result;
+      const preview = document.getElementById("previewImg");
+      preview.src = currentPhotoBase64; preview.style.display = "block";
+      document.getElementById("uploadText").textContent = "✅ Photo selected! Click to change.";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ─── AREAS ───
+  function populateAreaDropdown() {
+    const sel = document.getElementById("aLocation");
+    sel.innerHTML = '<option value="">Select Area</option>' + areas.map(a => `<option value="${a}">${a}</option>`).join("");
+  }
+  function populateAreaFilter() {
+    const sel = document.getElementById("filterArea");
+    sel.innerHTML = '<option value="">All Areas</option>' + areas.map(a => `<option value="${a}">${a}</option>`).join("");
+  }
+
+  // ─── ADD LISTING ───
+  function addListing() {
+    const name = document.getElementById("aName").value.trim();
+    const location = document.getElementById("aLocation").value;
+    const rent = parseInt(document.getElementById("aRent").value);
+    const gender = document.getElementById("aGender").value;
+    const distance = parseFloat(document.getElementById("aDistance").value) || 0;
+    const emoji = document.getElementById("aEmoji").value.trim() || "👤";
+    if (!name || !location || !rent) { alert("Please fill in Name, Location, and Rent."); return; }
+    listings.push({ id: Date.now(), name, location, rent, gender, distance, emoji, photo: currentPhotoBase64, postedBy: currentUser.username, status: "pending", premium: false });
+    save();
+    ["aName","aRent","aDistance","aEmoji"].forEach(id => document.getElementById(id).value = "");
+    document.getElementById("aGender").selectedIndex = 0;
+    document.getElementById("aLocation").selectedIndex = 0;
+    document.getElementById("aPhoto").value = "";
+    document.getElementById("previewImg").style.display = "none";
+    document.getElementById("uploadText").textContent = "Click to upload photo from your device";
+    currentPhotoBase64 = null;
+    alert("✅ Listing submitted! Waiting for admin approval.");
+    goTo("listScreen");
+  }
+
+  // ─── RENDER LISTINGS (public) ───
+  function renderListings() {
+    const grid = document.getElementById("listingsGrid");
+    const areaF = document.getElementById("filterArea")?.value || "";
+    const genderF = document.getElementById("filterGender")?.value || "";
+    let approved = listings.filter(p => p.status === "approved");
+    if (areaF) approved = approved.filter(p => p.location === areaF);
+    if (genderF) approved = approved.filter(p => p.gender === genderF);
+    approved.sort((a,b) => (b.premium ? 1 : 0) - (a.premium ? 1 : 0));
+    if (approved.length === 0) {
+      grid.innerHTML = `<div class="empty-state"><span>🏠</span>No listings found.</div>`; return;
+    }
+    grid.innerHTML = approved.map(p => buildCard(p, false)).join("");
+  }
+
+  function buildCard(p, isAdmin) {
+    const canDelete = isAdmin || (currentUser && currentUser.username === p.postedBy);
+    return `
+      <div class="card ${p.premium ? 'premium' : ''}">
+        <div class="card-top">
+          ${p.photo ? `<img class="card-img" src="${p.photo}" alt="${p.name}" />` : `<div class="card-img-placeholder">${p.emoji || "👤"}</div>`}
+          <div class="card-info">
+            <div class="card-name">
+              ${p.name}
+              ${p.premium ? '<span class="badge-premium">⭐ Featured</span>' : ''}
+              ${p.status === 'pending' ? '<span class="badge-pending">⏳ Pending</span>' : ''}
+            </div>
+            <div class="card-location">📍 ${p.location}</div>
+            <div class="card-stats">
+              <div><div class="stat-label">Rent</div><div class="stat-value">₹ ${Number(p.rent).toLocaleString()}</div></div>
+              <div><div class="stat-label">Looking for</div><div class="stat-value">${p.gender}</div></div>
+              <div><div class="stat-label">Type</div><div class="stat-value">Roommate</div></div>
+            </div>
+            <div class="posted-by">Posted by: ${p.postedBy}</div>
+          </div>
+        </div>
+        <div class="card-bottom">
+          <div class="distance"><strong>${p.distance} km</strong> from search</div>
+          <div class="card-actions">
+            ${!isAdmin ? '<button class="icon-btn">📞</button><button class="icon-btn">💬</button>' : ''}
+            ${isAdmin ? `
+              <button class="admin-action-btn btn-premium" onclick="togglePremium(${p.id})">${p.premium ? '★ Unfeature' : '⭐ Feature'}</button>
+              <button class="admin-action-btn btn-delete" onclick="adminDeleteListing(${p.id})">🗑 Delete</button>
+            ` : ''}
+            ${!isAdmin && canDelete ? `<button class="icon-btn" onclick="userDeleteListing(${p.id})" title="Delete your listing">🗑</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ─── ADMIN PANEL ───
+  function renderAdminPanel() {
+    // Stats
+    const approved = listings.filter(l => l.status === "approved");
+    const pending = listings.filter(l => l.status === "pending");
+    const highest = listings.length ? Math.max(...listings.map(l => l.rent)) : 0;
+    document.getElementById("statUsers").textContent = users.length;
+    document.getElementById("statListings").textContent = approved.length;
+    document.getElementById("statPending").textContent = pending.length;
+    document.getElementById("statHighest").textContent = "₹" + highest.toLocaleString();
+
+    // Pending
+    const pList = document.getElementById("pendingList");
+    if (pending.length === 0) { pList.innerHTML = '<p style="color:#888;font-size:14px;">No pending listings.</p>'; }
+    else {
+      pList.innerHTML = pending.map(p => `
+        <div class="pending-card">
+          <div class="pending-info">
+            <strong>${p.name}</strong> — 📍 ${p.location} — ₹${Number(p.rent).toLocaleString()}<br/>
+            <span style="font-size:11px;color:#888;">Posted by: ${p.postedBy}</span>
+          </div>
+          <div class="pending-actions">
+            <button class="admin-action-btn btn-approve" onclick="approveListing(${p.id})">✅ Approve</button>
+            <button class="admin-action-btn btn-reject" onclick="rejectListing(${p.id})">❌ Reject</button>
+          </div>
+        </div>`).join("");
+    }
+
+    // All listings (admin)
+    const grid = document.getElementById("adminListingsGrid");
+    if (approved.length === 0) { grid.innerHTML = '<p style="color:#888;font-size:14px;">No approved listings yet.</p>'; }
+    else { grid.innerHTML = approved.map(p => buildCard(p, true)).join(""); }
+
+    // Users
+    const uList = document.getElementById("usersList");
+    if (users.length === 0) { uList.innerHTML = '<p style="color:#888;font-size:14px;">No users yet.</p>'; }
+    else {
+      uList.innerHTML = users.map((u, i) => `
+        <div class="user-row ${u.banned ? 'banned' : ''}">
+          <div class="user-info">
+            <div class="user-avatar">${u.username.charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="user-name">${u.username} ${u.banned ? '🚫 Banned' : ''}</div>
+              <div class="user-meta">${listings.filter(l => l.postedBy === u.username).length} listings</div>
+            </div>
+          </div>
+          <div class="user-actions">
+            ${u.banned
+              ? `<button class="btn-unban" onclick="toggleBan(${i})">✅ Unban</button>`
+              : `<button class="btn-ban" onclick="toggleBan(${i})">🚫 Ban</button>`
+            }
+            <button class="btn-delete-user" onclick="deleteUser(${i})">🗑 Delete</button>
+          </div>
+        </div>`).join("");
+    }
+
+    // Areas
+    renderAreas();
+  }
+
+  function renderAreas() {
+    document.getElementById("areasRow").innerHTML = areas.map((a,i) => `
+      <div class="area-tag">${a} <button onclick="removeArea(${i})">×</button></div>`).join("");
+  }
+
+  // ─── LISTING ACTIONS ───
+  function approveListing(id) { const l = listings.find(x => x.id === id); if (l) { l.status = "approved"; save(); renderAdminPanel(); } }
+  function rejectListing(id) { listings = listings.filter(x => x.id !== id); save(); renderAdminPanel(); }
+  function adminDeleteListing(id) { if (confirm("Delete this listing?")) { listings = listings.filter(x => x.id !== id); save(); renderAdminPanel(); } }
+  function userDeleteListing(id) { if (confirm("Delete your listing?")) { listings = listings.filter(x => x.id !== id); save(); renderListings(); } }
+  function togglePremium(id) { const l = listings.find(x => x.id === id); if (l) { l.premium = !l.premium; save(); renderAdminPanel(); } }
+
+  // ─── USER ACTIONS ───
+  function toggleBan(i) { users[i].banned = !users[i].banned; save(); renderAdminPanel(); }
+  function deleteUser(i) { if (confirm("Delete user " + users[i].username + "?")) { users.splice(i, 1); save(); renderAdminPanel(); } }
+
+  // ─── AREA ACTIONS ───
+  function addArea() {
+    const val = document.getElementById("newAreaInput").value.trim();
+    if (!val) return;
+    if (areas.includes(val)) { alert("Area already exists."); return; }
+    areas.push(val); save(); renderAreas();
+    document.getElementById("newAreaInput").value = "";
+  }
+  function removeArea(i) { areas.splice(i, 1); save(); renderAreas(); }
+
+  // ─── TRENDING ───
+  function setTrending() {
+    const val = document.getElementById("trendingInput").value.trim();
+    if (!val) return;
+    trendingArea = val; save();
+    document.getElementById("trendingBanner").textContent = "🔥 Most searched area: " + trendingArea;
+    document.getElementById("trendingInput").value = "";
+    alert("✅ Trending area updated!");
+  }
+
+  // ─── EXPORT ───
+  function exportData(type) {
+    const data = type === "users"
+      ? users.map(u => ({ username: u.username, banned: u.banned }))
+      : listings.map(l => ({ name: l.name, location: l.location, rent: l.rent, status: l.status, postedBy: l.postedBy }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `sharf_${type}.json`; a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
